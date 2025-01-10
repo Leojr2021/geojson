@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        #map { width: 100%; height: 100vh; margin: 0; }
+        body { margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = "MAPBOX_API_KEY"; 
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-111.891, 39.320], // Center of Utah
+            zoom: 6
+        });
+
+        // GeoJSON Data
+        const geojson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [-113.5, 38.0],
+                                [-111.5, 38.5],
+                                [-111.0, 39.5],
+                                [-113.0, 39.0],
+                                [-113.5, 38.0]
+                            ]
+                        ]
+                    },
+                    "properties": {
+                        "name": "Zone 1",
+                        "missionaryStatus": "local"
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [-111.5, 37.0],
+                                [-109.5, 37.5],
+                                [-109.0, 38.5],
+                                [-111.0, 38.0],
+                                [-111.5, 37.0]
+                            ]
+                        ]
+                    },
+                    "properties": {
+                        "name": "Zone 2",
+                        "missionaryStatus": "remote"
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [-109.0, 37.5],
+                                [-107.5, 38.0],
+                                [-107.0, 39.0],
+                                [-109.0, 38.5],
+                                [-109.0, 37.5]
+                            ]
+                        ]
+                    },
+                    "properties": {
+                        "name": "Zone 3",
+                        "missionaryStatus": "none"
+                    }
+                }
+            ]
+        };
+
+        // Add GeoJSON to Map
+        map.on('load', () => {
+            map.addSource('zones', { type: 'geojson', data: geojson });
+
+            map.addLayer({
+                id: 'zones-layer',
+                type: 'fill',
+                source: 'zones',
+                paint: {
+                    'fill-color': [
+                        'match',
+                        ['get', 'missionaryStatus'],
+                        'local', '#008000',  // Green for local
+                        'remote', '#FFA500', // Orange for remote
+                        'none', '#FF0000',   // Red for none
+                        '#CCCCCC'            // Default gray
+                    ],
+                    'fill-opacity': 0.5
+                }
+            });
+
+            // Add Popups
+            map.on('click', 'zones-layer', (e) => {
+                const properties = e.features[0].properties;
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(`<strong>${properties.name}</strong><br>Status: ${properties.missionaryStatus}`)
+                    .addTo(map);
+            });
+
+            // Change Cursor
+            map.on('mouseenter', 'zones-layer', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'zones-layer', () => {
+                map.getCanvas().style.cursor = '';
+            });
+        });
+    </script>
+</body>
+</html>
